@@ -10,6 +10,7 @@ System will calculate the parked time, and will show payable amount.
 
 While vehicle is entering - 
 	POST - http://localhost:8080/service/{vehicleRegNumber}/in
+
 While vehicle is exiting - 
 	POST - http://localhost:8080/service/{ticketId}/out
 
