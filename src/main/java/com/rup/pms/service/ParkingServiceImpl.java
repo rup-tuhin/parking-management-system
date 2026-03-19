@@ -24,7 +24,7 @@ public class ParkingServiceImpl implements ParkingService {
     @Value("${basePrice}")
     private int basePrice;
 
-    private Map<String, VehicleTicket> slots = new ConcurrentHashMap<>(100);
+    private final Map<String, VehicleTicket> slots = new ConcurrentHashMap<>(100);
 
     @Override
     public VehicleTicket parkIn(String vehicleNumber) {
@@ -51,18 +51,12 @@ public class ParkingServiceImpl implements ParkingService {
 
     @Override
     public VehicleTicket getParkingDetails(String vehicleNumber) {
-        VehicleTicket parkedTicket = slots.values()
+       return slots.values()
                 .stream()
                 .filter(t -> null == t.getOutTime())
                 .filter(t -> t.getVehicleNumber().equals(vehicleNumber))
-                .findFirst().orElse(null);
-        if (parkedTicket != null) {
-            VehicleTicket copyTicket = parkedTicket.clone();
-            copyTicket.setOutTime(new Date());
-            calculateAmount(copyTicket);
-            return copyTicket;
-        }
-        return parkedTicket;
+                .findFirst().map(VehicleTicket::clone)
+                .orElse(null);
     }
 
     @Override
@@ -70,7 +64,8 @@ public class ParkingServiceImpl implements ParkingService {
         return slots.values()
                 .stream()
                 .filter(t -> UUID.fromString(id).equals(t.getTicketId()))
-                .findFirst().orElse(null);
+                .findFirst().map(VehicleTicket::clone)
+                .orElse(null);
     }
 
     @Override
@@ -79,10 +74,8 @@ public class ParkingServiceImpl implements ParkingService {
                 .filter(t -> null == t.getOutTime())
                 .map(VehicleTicket::clone)
                 .collect(Collectors.toList());
-        details.forEach(t -> {
-            t.setOutTime(new Date());
-            calculateAmount(t);
-        });
+        // t.setOutTime(new Date());
+        details.forEach(this::calculateAmount);
         return details;
     }
 
@@ -95,13 +88,15 @@ public class ParkingServiceImpl implements ParkingService {
         Set<String> existingIds = slots.keySet();
         String id;
         do {
-            id = Integer.valueOf(RandomUtils.nextInt(0, maxCapacity)).toString();
+            id = Integer.valueOf(RandomUtils.secure().randomInt(0, maxCapacity)).toString();
         } while (existingIds.contains(id));
         return StringUtils.leftPad(id, 3, "0");
     }
 
     private String calculateAmount(VehicleTicket originalTicket) {
-        long duration = (originalTicket.getOutTime().getTime() - originalTicket.getInTime().getTime()) / (60 * 60 * 1000);
+        long duration = (originalTicket.getOutTime() != null ?
+                originalTicket.getOutTime().getTime() : new Date().getTime()
+                - originalTicket.getInTime().getTime()) / (60 * 60 * 1000);
         long chargeableDuration = duration > freeHours ? duration - freeHours : 0;
         long chargeAmount = basePrice + chargeableDuration * unitCost;
         originalTicket.setChargeAmount(chargeAmount);
