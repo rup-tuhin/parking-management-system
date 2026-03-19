@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+  pms-app:
+    build: . # Build the Docker image using the Dockerfile in the current directory
+    ports:
+      - "8080:8080" # Map host port 8080 to container port 8080
+    # Optional: Add environment variables if needed
+    # environment:
+    #   SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/mydatabase
+    #   SPRING_DATASOURCE_USERNAME: user
+    #   SPRING_DATASOURCE_PASSWORD: password

@@ -31,11 +31,19 @@ public class ParkingManagementController {
         return marshall(ticket);
     }
 
-    @PostMapping(path = "{ticketId}/out", produces = APPLICATION_JSON_VALUE)
+    @DeleteMapping(path = "{ticketId}/out", produces = APPLICATION_JSON_VALUE)
     public String parkOut(@PathVariable(value = "ticketId") String ticketId) {
         VehicleTicket ticket = service.getTicketDetails(ticketId);
-        LOG.info("Clearing out slot [{}]", ticket.getSlotNumber());
-        return service.parkOut(ticket);
+        return logAndParkOut(ticket);
+    }
+
+    @PutMapping(path = "{vehicleNumber}/out", produces = APPLICATION_JSON_VALUE)
+    public String parkOutByVehicle(@PathVariable(value = "vehicleNumber") String vehicleNumber) {
+        VehicleTicket ticket = service.getParkingDetails(vehicleNumber);
+        if(ticket == null) {
+            throw new IllegalArgumentException("No parking record found for vehicle: " + vehicleNumber);
+        }
+        return logAndParkOut(ticket);
     }
 
     @GetMapping(path = "{vehicleNumber}/status", produces = APPLICATION_JSON_VALUE)
@@ -67,6 +75,11 @@ public class ParkingManagementController {
 
         }
         return "";
+    }
+
+    private String logAndParkOut(VehicleTicket ticket) {
+        LOG.info("Clearing out slot [{}]", ticket.getSlotNumber());
+        return service.parkOut(ticket);
     }
 
 }
